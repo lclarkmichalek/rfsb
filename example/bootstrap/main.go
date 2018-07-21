@@ -1,3 +1,4 @@
+// This example shows how I provision my pet server. It's not so much an example as just a convenient place for me to put this stuff.
 package main
 
 import (

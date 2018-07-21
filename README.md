@@ -82,3 +82,7 @@ RFSB gets out of your way. By presenting a very thin abstraction, RFSB hopes you
 All features not contained in the current version of RFSB are misfeatures until I decided I need them.
 
 RFSB has a DAG and feels guilty about it.
+
+# Cool.
+
+Check out `example/bootstrap/main.go` for an example of 100% of the functionality that rfsb supports..
