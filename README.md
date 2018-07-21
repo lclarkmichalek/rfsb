@@ -7,7 +7,7 @@ The workflow of Ansible meets the feature set of cloud-init plus the ease of dep
 
 ## Why: How do I deploy applications without tearing my eyes out
 
-Let's compare deployment techonolgies on the market today:
+Let's compare deployment technologies on the market today:
 
 | Name | Do you really like it? | Is it really wicked? |
 | - | - | - |
@@ -18,7 +18,7 @@ Unfortunately, none of these quite hit the mark of "we're loving it loving it lo
 
 ### L - Loving it
 
-I like my machines. Sometimes I **log** onto them. When I do, I like stuff to be available. RFSB lets me make things available, without introducing overhead. 
+I like my machines. Sometimes I **log** onto them. When I do, I like stuff to be available. RFSB lets me make things available without introducing overhead. 
 
 I add myself as a user.
 
@@ -80,6 +80,6 @@ RFSB is designed to be simple and self sufficent. RFSB binaries should be able t
 
 RFSB gets out of your way. By presenting a very thin abstraction, RFSB hopes you will immediately see the weaknesses in its core abstractions, and stop using it.
 
-All features not contained in the current version of RFSB are misfeatures until I decided I need them
+All features not contained in the current version of RFSB are misfeatures until I decided I need them.
 
 RFSB has a DAG and feels guilty about it.
