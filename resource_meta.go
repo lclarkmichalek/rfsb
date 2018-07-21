@@ -10,7 +10,11 @@ import (
 type Resource interface {
 	Materialize(context.Context) error
 
-	resourceMeta() *ResourceMeta
+	Initialize(string)
+
+	// Best to implement these by embedding ResourceMeta
+	Name() string
+	Logger() *logrus.Entry
 }
 
 // SkippableResource should be implemented by resources that can check to see if they need to be materialized, and skip materialisation if not needed.
@@ -21,41 +25,43 @@ type SkippableResource interface {
 
 // ResourceMeta is struct that should be embedded by all Resource implementers, so as to simplify the accounting side of things
 type ResourceMeta struct {
-	Name   string
-	Logger *logrus.Entry
-	// Resources that should be run when this resource has finished running
-	dependsOnThis []Resource
-	thisDependsOn []Resource
+	name   string
+	logger *logrus.Entry
 }
 
-func (rm *ResourceMeta) resourceMeta() *ResourceMeta {
-	return rm
+func (rm *ResourceMeta) Name() string {
+	return rm.name
+}
+
+func (rm *ResourceMeta) Logger() *logrus.Entry {
+	return rm.logger
 }
 
 // Called when the resource is registered with the registry
-func (rm *ResourceMeta) initialize(name string) {
-	rm.Name = name
-	rm.Logger = logrus.New().WithField("resource", name)
+func (rm *ResourceMeta) Initialize(name string) {
+	rm.name = name
+	rm.logger = logrus.New().WithField("resource", name)
 }
 
-func Run(r Resource) *DependencySetter {
-	return &DependencySetter{target: r}
+type registry interface {
+	Register(string, Resource)
+	RegisterDependency(from, to Resource)
 }
 
 type DependencySetter struct {
-	target Resource
-	source Resource
+	registry registry
+	sources  []Resource
 }
 
-func (ds *DependencySetter) When(r Resource) *DependencySetter {
-	ds.source = r
+func (ds *DependencySetter) And(source Resource) *DependencySetter {
+	ds.sources = append(ds.sources, source)
 	return ds
 }
 
-func (ds *DependencySetter) Finishes() {
-	targetRM := ds.target.resourceMeta()
-	sourceRM := ds.source.resourceMeta()
-
-	sourceRM.dependsOnThis = append(sourceRM.dependsOnThis, ds.target)
-	targetRM.thisDependsOn = append(targetRM.thisDependsOn, ds.source)
+func (ds *DependencySetter) Do(name string, target Resource) *DependencySetter {
+	ds.registry.Register(name, target)
+	for _, source := range ds.sources {
+		ds.registry.RegisterDependency(source, target)
+	}
+	return ds
 }

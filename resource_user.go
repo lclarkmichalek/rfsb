@@ -45,7 +45,7 @@ func (ur *UserResource) ShouldSkip(context.Context) (bool, error) {
 		if line == expectedLine {
 			return true, nil
 		} else if lineDefinesUID(line, ur.UID) {
-			ur.Logger.Infof("found user registered with different attributes")
+			ur.Logger().Infof("found user registered with different attributes")
 			return false, nil
 		}
 	}
@@ -65,7 +65,7 @@ func (ur *UserResource) Materialize(context.Context) error {
 			continue
 		}
 		if line == expectedLine {
-			ur.Logger.Warnf("skip failed, user existed")
+			ur.Logger().Warnf("skip failed, user existed")
 		} else if lineDefinesUID(line, ur.UID) {
 			newPasswd.Write([]byte(expectedLine))
 		} else {

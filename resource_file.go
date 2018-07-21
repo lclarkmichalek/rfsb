@@ -29,7 +29,7 @@ func (fr *FileResource) SkippableResource(context.Context) (bool, error) {
 		}
 	}
 	if fi.Mode() != fr.Mode {
-		fr.Logger.Infof("mode has changed (current: %v)", fr.Mode)
+		fr.Logger().Infof("mode has changed (current: %v)", fr.Mode)
 		return false, nil
 	}
 	if sys, ok := fi.Sys().(*syscall.Stat_t); ok {
@@ -37,7 +37,7 @@ func (fr *FileResource) SkippableResource(context.Context) (bool, error) {
 			return false, nil
 		}
 	} else {
-		fr.Logger.Warn("could not test file permissions as not linux")
+		fr.Logger().Warn("could not test file permissions as not linux")
 	}
 
 	currentContents, err := ioutil.ReadFile(fr.Path)

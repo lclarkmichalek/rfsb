@@ -37,14 +37,13 @@ I add my key.
 
 ```
 addLCMSSHKey := &rfsb.FileResource{
-    Path:     "/home/lcm/.ssh/authorized_keys",
-    Mode:     0400,
-    Contents: `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAL5YH0a+pKd8E8Be97+gN/kn+U71JCapIH8uysrecKB lcm@lcm-mbp`,
-    UID:      addLCM.UID,
-    GID:      addLCM.GID,
+  Path:     "/home/lcm/.ssh/authorized_keys",
+  Mode:     0400,
+  Contents: `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAL5YH0a+pKd8E8Be97+gN/kn+U71JCapIH8uysrecKB lcm@lcm-mbp`,
+  UID:      addLCM.UID,
+  GID:      addLCMGroup.GID,
 }
-rfsb.Register("addLCMSSHKey", addLCMSSHKey)
-rfsb.Run(addLCMSSHKey).When(addLCM).Finishes()
+rg.When(addLCM).Do("addLCM", addLCMSSHKey)
 ```
 
 Now I can **log** onto my machines.

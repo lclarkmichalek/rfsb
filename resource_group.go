@@ -27,7 +27,7 @@ func (gr *GroupResource) ShouldSkip(context.Context) (bool, error) {
 	for i, line := range strings.Split(string(groupContents), "\n") {
 		parts := strings.Split(line, ":")
 		if len(parts) != 4 {
-			gr.Logger.Warnf("/etc/group malformed on line %v", i+1)
+			gr.Logger().Warnf("/etc/group malformed on line %v", i+1)
 			continue
 		}
 
@@ -57,12 +57,12 @@ func (gr *GroupResource) Materialize(context.Context) error {
 
 		parts := strings.Split(line, ":")
 		if len(parts) != 4 {
-			gr.Logger.Warnf("/etc/group malformed on line %v", i+1)
+			gr.Logger().Warnf("/etc/group malformed on line %v", i+1)
 			newContents.WriteString(line)
 		} else if parts[2] != strconv.Itoa(int(gr.GID)) {
 			newContents.WriteString(line)
 		} else {
-			parts[0] = gr.Name
+			parts[0] = gr.Group
 			newContents.WriteString(strings.Join(parts, ":"))
 		}
 		newContents.WriteByte('\n')
@@ -91,7 +91,7 @@ func (gmr *GroupMembershipResource) ShouldSkip(context.Context) (bool, error) {
 	for i, line := range strings.Split(string(groupContents), "\n") {
 		parts := strings.Split(line, ":")
 		if len(parts) != 4 {
-			gmr.Logger.Warnf("/etc/group malformed on line %v", i+1)
+			gmr.Logger().Warnf("/etc/group malformed on line %v", i+1)
 			continue
 		}
 
@@ -124,7 +124,7 @@ func (gmr *GroupMembershipResource) Materialize(context.Context) error {
 		newContents.WriteString(line)
 		parts := strings.Split(line, ":")
 		if len(parts) != 4 {
-			gmr.Logger.Warnf("/etc/group malformed on line %v", i+1)
+			gmr.Logger().Warnf("/etc/group malformed on line %v", i+1)
 		} else if parts[2] == strconv.Itoa(int(gmr.GID)) {
 			if parts[3] != "" {
 				newContents.WriteByte(',')
