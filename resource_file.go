@@ -21,14 +21,15 @@ type FileResource struct {
 	Contents string
 }
 
-func (fr *FileResource) SkippableResource(context.Context) (bool, error) {
+// ShouldSkip stats and reads the file to see if any modifications are required.
+func (fr *FileResource) ShouldSkip(context.Context) (bool, error) {
 	fi, err := os.Stat(fr.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
+			fr.Logger().Debugf("target does not exist")
 			return true, nil
-		} else {
-			return false, errors.Wrap(err, "could not stat file")
 		}
+		return false, errors.Wrap(err, "could not stat file")
 	}
 	if fi.Mode() != fr.Mode {
 		fr.Logger().Infof("mode has changed (current: %v)", fr.Mode)
@@ -36,6 +37,7 @@ func (fr *FileResource) SkippableResource(context.Context) (bool, error) {
 	}
 	if sys, ok := fi.Sys().(*syscall.Stat_t); ok {
 		if sys.Uid != fr.UID || sys.Gid != fr.GID {
+			fr.Logger().Infof("uid/gid has changed (current: %v:%v)", sys.Uid, sys.Gid)
 			return false, nil
 		}
 	} else {
@@ -47,7 +49,7 @@ func (fr *FileResource) SkippableResource(context.Context) (bool, error) {
 		return false, errors.Wrapf(err, "could not read %v", fr.Path)
 	}
 
-	return string(currentContents) != fr.Contents, nil
+	return string(currentContents) == fr.Contents, nil
 }
 
 // Materialize writes the file out and sets the owners correctly
