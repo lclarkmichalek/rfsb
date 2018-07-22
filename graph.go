@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
+// ResourceGraph is a container for Resources and dependencies between them.
 type ResourceGraph struct {
-	name                string
-	logger              *logrus.Entry
+	ResourceMeta
+
 	resources           []Resource
 	dependencies        map[Resource][]Resource
 	inverseDependencies map[Resource][]Resource
@@ -150,15 +150,4 @@ func (rg *ResourceGraph) When(sources ...Resource) *DependencySetter {
 		sources:  sources,
 		registry: rg,
 	}
-}
-
-func (rg *ResourceGraph) Initialize(name string) {
-	rg.name = name
-	rg.logger = logrus.New().WithField("graph", name)
-}
-func (rg *ResourceGraph) Name() string {
-	return rg.name
-}
-func (rg *ResourceGraph) Logger() *logrus.Entry {
-	return rg.logger
 }
