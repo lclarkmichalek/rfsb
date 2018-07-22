@@ -4,7 +4,6 @@
 
 The workflow of Ansible meets the feature set of cloud-init plus the ease of deployment of bash script.
 
-
 ## Why: How do I deploy applications without tearing my eyes out
 
 Let's compare deployment technologies on the market today:
@@ -85,4 +84,5 @@ RFSB has a DAG and feels guilty about it.
 
 # Cool.
 
-Check out `example/bootstrap/main.go` for an example of 100% of the functionality that rfsb supports..
+Check out `example/bootstrap/main.go` for an example of 100% of the functionality that rfsb supports along with our
+[documentation](https://godoc.org/github.com/lclarkmichalek/rfsb) for more explanations and examples.

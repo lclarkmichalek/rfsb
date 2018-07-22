@@ -111,4 +111,77 @@
 //    }
 //
 // And there we have it. Everything you need to know about rfsb.
+//
+// Rationale
+//
+// Puppet/Chef/Ansible (henceforth referred to collectively as CAP) all suck. For small deployments, the centralised
+// server of CP is annoying, and for larger deployments, A is limiting, P devolves into a mess, and C, well I guess it
+// can work if you devote an entire team to it. RFSB aims to grow gracefully from small to large, and give you the
+// power to run it in any way you like. Let's take a look at some features that RFSB doesn't force you to provide.
+//
+// A popular feature of many systems is periodic agent runs. RFSB doesn't have any built in support for running
+// periodically, so we'll need to build it ourselves. Let's take a look at what that might look like:
+//
+//    func main() {
+//        root := provision()
+//        for range time.NewTicker(time.Minute * 15) {
+//            err := root.Materialize(context.Background())
+//            if err != nil {
+//                os.Stderr.Write(err.Error())
+//            }
+//        }
+//    }
+//
+// Here we've used the radical method of running our Materialize function in a loop. But what you don't see is all the
+// complexity you just avoided. For example, Chef supports both 'interactive' and 'daemon' mode. You can trigger an
+// interactive Chef run via "chefctl -i". I think this communicates with the "chef-client" process, which then actually
+// performs the Chef run, and reports the results back to chefctl. I think. In RFSB, this complexity goes away. If I
+// want to understand how your RFSB job runs, I open its main.go and read. If you don't ever use periodic runs, you
+// don't ever need to think about them.
+//
+// Another common feature is some kind of fact store. This allows you to see in one place all of the information about
+// all of your servers. Or at least, all of the information that Puppet or Chef figured might be useful. In RFSB, we
+// take the radical approach of letting you use a fact store if you want, or not if you don't want. For example, if you
+// have a facts store with some Go bindings, you might use it to customize how you provision things:
+//
+//   func provision() Resource {
+//        rg := &rfsb.ResourceGraph{}
+//        filesystem := provisionBaseFilesystem()
+//        rg.Register("filesystem", filesystem)
+//
+//        hostname, _ := os.Hostname()
+//        role := myFactsStore.GetRoleFromHostname(hostname)
+//        if role == "database" {
+//            rg.When(filesystem).Do("database", provisionDatabase())
+//        } else if role == "frontend" {
+//            rg.When(filesystem).Do("frontend", provisionFrontend())
+//        }
+//        return rg
+//   }
+//
+// Now, this might be the point where you cry out and say 'but I can't have a big if else statement for all of my
+// roles!'. The reality is that you probably can, and if you can't you should cut down the number of unique
+// configurations. But anyway, assuming you have a good reason, RFSB has ways to handle this. Mostly, it relies on an
+// interesting property, known as 'being just Go'. For example, you could use an interesting abstraction known as the
+// 'map':
+//
+//   var provisionRole := map[string]func() Resource{}{
+//       "database": provisionDatabase(),
+//       "frontend": provisionFrontend(),
+//   }
+//
+//   func provision() Resource {
+//        rg := &rfsb.ResourceGraph{}
+//        filesystem := provisionBaseFilesystem()
+//        rg.Register("filesystem", filesystem)
+//
+//        hostname, _ := os.Hostname()
+//        role := myFactsStore.GetRoleFromHostname(hostname)
+//        rg.When(filesystem).Do(role, provisionRole[role]())
+//        return rg
+//   }
+//
+// Now you might say "but that's basically just a switch statement in map form". And you'd be correct. But you get the
+// point. You have all the power of Go at your disposal. Go build the abstractions that make sense to you. I'm not
+// going to tell you how to build your software; the person with the context needed to solve your problems is you.
 package rfsb
