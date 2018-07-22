@@ -122,7 +122,7 @@ func main() {
 	// 	logrus.Fatal("failed to validate resource graph: ", err)
 	// }
 
-	err := rfsb.MaterializeChanges(context.Background())
+	err := rfsb.Materialize(context.Background())
 	if err != nil {
 		logrus.Fatal("failed to materialize changes: ", err)
 	}

@@ -22,6 +22,9 @@ func (rg *ResourceGraph) init() {
 	rg.inverseDependencies = map[Resource][]Resource{}
 }
 
+// Register adds the Resource to the graph.
+//
+// The Resource will have its Initialize method called with the passed name.
 func (rg *ResourceGraph) Register(name string, r Resource) {
 	rg.init()
 	r.Initialize(name)
@@ -37,6 +40,8 @@ func (rg *ResourceGraph) Register(name string, r Resource) {
 	}
 }
 
+// RegisterDependency adds a dependency between two resources. This ensures the second resource (`to`) will not be
+// Materialized before the first resource (`from`) has finished Materializing
 func (rg *ResourceGraph) RegisterDependency(from, to Resource) {
 	froms := []Resource{from}
 	if fromRG, ok := from.(*ResourceGraph); ok {
@@ -55,14 +60,8 @@ func (rg *ResourceGraph) RegisterDependency(from, to Resource) {
 	}
 }
 
-func (rg *ResourceGraph) merge(with *ResourceGraph) {
-	rg.resources = append(rg.resources, with.resources...)
-	for _, resource := range with.resources {
-		rg.dependencies[resource] = append(rg.dependencies[resource], with.dependencies[resource]...)
-		rg.inverseDependencies[resource] = append(rg.inverseDependencies[resource], with.inverseDependencies[resource]...)
-	}
-}
-
+// Materialize executes all of the resources in the resource graph. Resources will be materialized in parallel, while
+// not violating constraints introduced by RegisterDependency
 func (rg *ResourceGraph) Materialize(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -142,6 +141,10 @@ func (rg *ResourceGraph) leafResources() []Resource {
 	return leaves
 }
 
+// When returns a new DependencySetter for the ResourceGraph.
+//
+// When is the main API that should be used to register dependencies. It's most basic use is just simple chaining of
+// dependencies:
 func (rg *ResourceGraph) When(sources ...Resource) *DependencySetter {
 	return &DependencySetter{
 		sources:  sources,

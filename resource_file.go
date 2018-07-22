@@ -9,7 +9,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// FileResource ensures the file at the given path has the given content and mode
+// FileResource ensures the file at the given path has the given content, mode and owner.
+//
+// It does not create directories. For that, see DirectoryResource
 type FileResource struct {
 	ResourceMeta
 	Path     string
@@ -48,6 +50,7 @@ func (fr *FileResource) SkippableResource(context.Context) (bool, error) {
 	return string(currentContents) != fr.Contents, nil
 }
 
+// Materialize writes the file out and sets the owners correctly
 func (fr *FileResource) Materialize(context.Context) error {
 	err := ioutil.WriteFile(fr.Path, []byte(fr.Contents), fr.Mode)
 	if err != nil {
