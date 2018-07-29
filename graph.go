@@ -19,8 +19,12 @@ type ResourceGraph struct {
 }
 
 func (rg *ResourceGraph) init() {
-	rg.dependencies = map[Resource][]Resource{}
-	rg.inverseDependencies = map[Resource][]Resource{}
+	if len(rg.dependencies) == 0 {
+		rg.dependencies = map[Resource][]Resource{}
+	}
+	if len(rg.dependencies) == 0 {
+		rg.inverseDependencies = map[Resource][]Resource{}
+	}
 }
 
 // Register adds the Resource to the graph.
