@@ -1,8 +1,10 @@
 module github.com/lclarkmichalek/rfsb
 
 require (
+	github.com/coreos/go-systemd v0.0.0-20180705093442-88bfeed483d3
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
+	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.6.0 // indirect
