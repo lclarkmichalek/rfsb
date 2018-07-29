@@ -27,7 +27,7 @@ func (rg *ResourceGraph) init() {
 // The Resource will have its Initialize method called with the passed name.
 func (rg *ResourceGraph) Register(name string, r Resource) {
 	rg.init()
-	r.Initialize(name)
+	r.SetName(name)
 
 	if otherRG, ok := r.(*ResourceGraph); ok {
 		rg.resources = append(rg.resources, otherRG.resources...)
@@ -57,6 +57,15 @@ func (rg *ResourceGraph) RegisterDependency(from, to Resource) {
 			rg.dependencies[from] = append(rg.dependencies[from], to)
 			rg.inverseDependencies[to] = append(rg.inverseDependencies[to], from)
 		}
+	}
+}
+
+// SetName sets the name for the resource, but also prepends the resource name to any registered resources, ensuring
+// that the resource hierachy is reflected in the logger naming
+func (rg *ResourceGraph) SetName(name string) {
+	rg.ResourceMeta.SetName(name)
+	for _, r := range rg.resources {
+		r.SetName(rg.Name() + "·" + r.Name())
 	}
 }
 
@@ -97,14 +106,14 @@ func (rg *ResourceGraph) Materialize(ctx context.Context) error {
 				var err error
 				shouldSkip, err = skippable.ShouldSkip(ctx)
 				if err != nil {
-					return errors.Wrap(err, "could not determine if materialization should be skipped")
+					return errors.Wrapf(err, "could not determine if materialization should be skipped for %v", resource.Name())
 				}
 			}
 			if !shouldSkip {
 				resource.Logger().Infof("materializing resource")
 				err := resource.Materialize(ctx)
 				if err != nil {
-					return errors.Wrap(err, "could not materialize resource")
+					return errors.Wrapf(err, "could not materialize resource %v", resource.Name())
 				}
 			} else {
 				resource.Logger().Infof("skipping resource materialization")

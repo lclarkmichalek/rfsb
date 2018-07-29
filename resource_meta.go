@@ -10,10 +10,9 @@ import (
 type Resource interface {
 	Materialize(context.Context) error
 
-	Initialize(string)
-
 	// Best to implement these by embedding ResourceMeta
 	Name() string
+	SetName(string)
 	Logger() *logrus.Entry
 }
 
@@ -37,8 +36,8 @@ func (rm *ResourceMeta) Logger() *logrus.Entry {
 	return rm.logger
 }
 
-// Called when the resource is registered with the registry
-func (rm *ResourceMeta) Initialize(name string) {
+// SetName is called when the resource is registered with the registry
+func (rm *ResourceMeta) SetName(name string) {
 	rm.name = name
 	rm.logger = logrus.New().WithField("resource", name)
 }

@@ -47,7 +47,7 @@ func TestFileResourceShouldSkip(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
-			c.runFirst.Initialize("runFirst")
+			c.runFirst.SetName("runFirst")
 			err := c.runFirst.Materialize(context.Background())
 			if err != nil {
 				t.Errorf("failed to materialize set up resource: %v", err)
@@ -55,7 +55,7 @@ func TestFileResourceShouldSkip(t *testing.T) {
 			}
 
 			if c.shouldBeSkippable != nil {
-				c.shouldBeSkippable.Initialize("shouldBeSkippable")
+				c.shouldBeSkippable.SetName("shouldBeSkippable")
 				shouldSkip, err := c.shouldBeSkippable.ShouldSkip(context.Background())
 				if err != nil {
 					t.Fatalf("failed to test shouldskip: %v", err)
@@ -66,7 +66,7 @@ func TestFileResourceShouldSkip(t *testing.T) {
 			}
 
 			if c.shouldNotBeSkippable != nil {
-				c.shouldNotBeSkippable.Initialize("shouldNotBeSkippable")
+				c.shouldNotBeSkippable.SetName("shouldNotBeSkippable")
 				shouldSkip, err := c.shouldNotBeSkippable.ShouldSkip(context.Background())
 				if err != nil {
 					t.Fatalf("failed to test shouldskip: %v", err)
