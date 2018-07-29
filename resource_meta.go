@@ -16,12 +16,6 @@ type Resource interface {
 	Logger() *logrus.Entry
 }
 
-// SkippableResource should be implemented by resources that can check to see if they need to be materialized, and skip materialisation if not needed.
-type SkippableResource interface {
-	Resource
-	ShouldSkip(context.Context) (bool, error)
-}
-
 // ResourceMeta is struct that should be embedded by all Resource implementers, so as to simplify the accounting side of things
 type ResourceMeta struct {
 	name   string
