@@ -40,8 +40,14 @@ func (cr *CmdResource) Materialize(ctx context.Context) error {
 	err := cmd.Run()
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
-			cr.Logger().Errorf("command stdout:\n%s", stdout.String())
-			cr.Logger().Errorf("command stderr:\n%s", stderr.String())
+			stdout := strings.TrimSpace(stdout.String())
+			if stdout != "" {
+				cr.Logger().Errorf("command stdout:\n%s", stdout)
+			}
+			stderr := strings.TrimSpace(stderr.String())
+			if stderr != "" {
+				cr.Logger().Errorf("command stderr:\n%s", stderr)
+			}
 			return errors.Wrap(err, "command failed")
 		}
 		return errors.Wrap(err, "could not run command")
