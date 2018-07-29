@@ -1,5 +1,7 @@
 package rfsb
 
+import "github.com/sirupsen/logrus"
+
 func init() {
-	SetupDefaultLogging()
+	logrus.SetLevel(logrus.DebugLevel)
 }

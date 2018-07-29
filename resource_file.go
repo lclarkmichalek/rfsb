@@ -27,7 +27,7 @@ func (fr *FileResource) ShouldSkip(context.Context) (bool, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			fr.Logger().Debugf("target does not exist")
-			return true, nil
+			return false, nil
 		}
 		return false, errors.Wrap(err, "could not stat file")
 	}

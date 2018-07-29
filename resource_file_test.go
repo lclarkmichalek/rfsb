@@ -40,6 +40,23 @@ func TestFileResourceShouldSkip(t *testing.T) {
 				GID:      uint32(os.Getgid()),
 			},
 		},
+		{
+			name: "file does not exist",
+			runFirst: &FileResource{
+				Path:     scratchDir + "/non_existent",
+				Contents: "hi",
+				Mode:     0644,
+				UID:      uint32(os.Getuid()),
+				GID:      uint32(os.Getgid()),
+			},
+			shouldNotBeSkippable: &FileResource{
+				Path:     scratchDir + "/non_existent_2",
+				Contents: "hi",
+				Mode:     0644,
+				UID:      uint32(os.Getuid()),
+				GID:      uint32(os.Getgid()),
+			},
+		},
 	}
 
 	for _, c := range cases {
@@ -71,7 +88,7 @@ func TestFileResourceShouldSkip(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to test shouldskip: %v", err)
 				}
-				if !shouldSkip {
+				if shouldSkip {
 					t.Fatalf("resource was skippable, should not have been")
 				}
 			}
