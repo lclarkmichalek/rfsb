@@ -1,6 +1,7 @@
 package rfsb
 
 import (
+	"bytes"
 	"context"
 	"time"
 
@@ -159,4 +160,30 @@ func (rg *ResourceGraph) When(sources ...Resource) *DependencySetter {
 		sources:  sources,
 		registry: rg,
 	}
+}
+
+func (rg *ResourceGraph) String() string {
+	buf := &bytes.Buffer{}
+	buf.WriteString("ResourceGraph{rs:[")
+	for i, resource := range rg.resources {
+		buf.WriteString(resource.Name())
+		if i != len(rg.resources)-1 {
+			buf.WriteString(" ")
+		}
+	}
+	buf.WriteString("], deps:{")
+	i := 0
+	for from, tos := range rg.dependencies {
+		for _, to := range tos {
+			buf.WriteString(from.Name())
+			buf.WriteString(":")
+			buf.WriteString(to.Name())
+			i++
+			if i != len(rg.dependencies) {
+				buf.WriteString(" ")
+			}
+		}
+	}
+	buf.WriteString("}}")
+	return buf.String()
 }
