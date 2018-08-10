@@ -25,18 +25,5 @@ func When(source Resource, signals ...Signal) *DependencySetter {
 //
 // Materialize is a shortcut for DefaultRegistry.Materialize. See there for more details
 func Materialize(ctx context.Context) error {
-	ch := make(chan Signal, 1024)
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case sig := <-ch:
-				if sig == SignalFinished {
-					return
-				}
-			}
-		}
-	}()
-	return DefaultRegistry.Materialize(ctx, ch)
+	return DefaultRegistry.Materialize(ctx)
 }

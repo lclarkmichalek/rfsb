@@ -19,7 +19,7 @@ type MyCustomResource struct {
 	Message string
 }
 
-func (mcr *MyCustomResource) Materialize(context.Context, chan<- rfsb.Signal) error {
+func (mcr *MyCustomResource) Materialize(context.Context) error {
 	mcr.Logger().Infoln(mcr.Message)
 	return nil
 }
@@ -30,7 +30,7 @@ func main() {
 	rg := &rfsb.ResourceGraph{}
 	rg.Register("foo", &MyCustomResource{Message: "hello world"})
 
-	err := rg.Materialize(context.Background(), make(chan rfsb.Signal, 1024))
+	err := rg.Materialize(context.Background())
 	if err != nil {
 		logrus.Fatal(err.Error())
 	}

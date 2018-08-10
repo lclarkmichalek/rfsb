@@ -65,7 +65,7 @@ func TestFileResourceShouldSkip(t *testing.T) {
 			t.Parallel()
 
 			c.runFirst.SetName("runFirst")
-			err := c.runFirst.Materialize(context.Background(), make(chan Signal, 1024))
+			err := c.runFirst.Materialize(context.Background())
 			if err != nil {
 				t.Errorf("failed to materialize set up resource: %v", err)
 				return

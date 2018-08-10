@@ -2,7 +2,7 @@ package rfsb
 
 import "os"
 
-func ExampleResourceGraph() {
+func ExampleResourceGraph_When() {
 	rg := &ResourceGraph{}
 
 	firstFile := &FileResource{
@@ -21,10 +21,10 @@ func ExampleResourceGraph() {
 		UID:      uint32(os.Getuid()),
 		GID:      uint32(os.Getgid()),
 	}
-	rg.When(firstFile, SignalFinished).Do("firstFile", secondFile)
+	rg.When(firstFile).Do("firstFile", secondFile)
 }
 
-func ExampleResourceGraph_When() {
+func ExampleResourceGraph_When_And() {
 	rg := &ResourceGraph{}
 
 	user := &UserResource{
@@ -46,5 +46,24 @@ func ExampleResourceGraph_When() {
 		GID:  group.GID,
 		User: user.User,
 	}
-	rg.When(user, SignalFinished).And(group, SignalFinished).Do("membership", membership)
+	rg.When(user).And(group).Do("membership", membership)
+}
+
+func ExampleResourceGraph_When_Optional() {
+	rg := &ResourceGraph{}
+
+	sshdConf := &FileResource{
+		Path:     "/etc/sshd.conf",
+		Contents: "foo",
+		Mode:     0600,
+		UID:      0,
+		GID:      0,
+	}
+	rg.Register("sshdConf", sshdConf)
+
+	reload := &CmdResource{
+		Command:   "/usr/bin/systemctl",
+		Arguments: []string{"reload", "sshd"},
+	}
+	rg.When(sshdConf, Materialized).Do("reload", reload)
 }

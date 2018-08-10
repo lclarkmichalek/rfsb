@@ -3,6 +3,8 @@ package rfsb
 import (
 	"bytes"
 	"context"
+	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -95,87 +97,98 @@ func (rg *ResourceGraph) SetName(name string) {
 	}
 }
 
+func (rg *ResourceGraph) waitForSignals(ctx context.Context, ch <-chan Signal, sigs []Signal) (met bool, unemittedButExpected []Signal) {
+	expectedSignals := map[Signal]struct{}{}
+	for _, expectedSig := range sigs {
+		expectedSignals[expectedSig] = struct{}{}
+	}
+
+	for {
+		var sig Signal
+		select {
+		case <-ctx.Done():
+			return false, nil
+		case sig = <-ch:
+		}
+		_, found := expectedSignals[sig]
+		if found {
+			delete(expectedSignals, sig)
+		}
+		if len(expectedSignals) == 0 {
+			return true, nil
+		}
+		if sig == Finished {
+			for s := range expectedSignals {
+				unemittedButExpected = append(unemittedButExpected, s)
+			}
+			return false, unemittedButExpected
+		}
+	}
+}
+
 // Materialize executes all of the resources in the resource graph. Resources will be materialized in parallel, while
 // not violating constraints introduced by RegisterDependency
-func (rg *ResourceGraph) Materialize(ctx context.Context, sigChan chan<- Signal) error {
+func (rg *ResourceGraph) Materialize(ctx context.Context) error {
 	dependencyChans := make(map[Resource]map[Resource]chan Signal, len(rg.resources))
 	for to, froms := range rg.inverseDependencies {
 		dependencyChans[to] = make(map[Resource]chan Signal, len(froms))
-		for from, signals := range froms {
-			dependencyChans[to][from] = make(chan Signal, len(signals)*2)
+		for from := range froms {
+			dependencyChans[to][from] = make(chan Signal, 3)
 		}
 	}
 
 	grp, ctx := errgroup.WithContext(ctx)
 	for _, resource := range rg.resources {
 		resource := resource
+		emit := func(sig Signal) {
+			for to := range rg.dependencies[resource] {
+				dependencyChans[to][resource] <- sig
+			}
+		}
 
-		grp.Go(func() (err error) {
-			var shouldSkipCount uint32
-			if fromChans, ok := dependencyChans[resource]; ok {
-				subGroup, ctx := errgroup.WithContext(ctx)
-				for from, signals := range dependencyChans[resource] {
-					from := from
-					signals := signals
-					subGroup.Go(func() error {
-						sigs := make(map[Signal]struct{}, len(signals))
-						for _, sig := range rg.inverseDependencies[resource][from] {
-							sigs[sig] = struct{}{}
-						}
-						for {
-							select {
-							case <-ctx.Done():
-								return nil
-							case recievedSignal := <-fromChans[from]:
-								if recievedSignal == SignalFinished {
-									// are we waiting on another signal from this resource, and we got a finish? implies
-									// that the resource will never emit the signal we wanted, and we should skip
-									// materialization
-									if _, ok := sigs[SignalFinished]; !ok {
-										resource.Logger().Infof(
-											"skipping due to %s finishing without emitting %s",
-											from,
-											rg.inverseDependencies[resource][from])
-										atomic.AddUint32(&shouldSkipCount, 1)
-									}
-									return nil
-								}
-								if _, ok := sigs[recievedSignal]; !ok {
-									continue
-								}
-								delete(sigs, recievedSignal)
-								if len(sigs) == 0 {
-									return nil
-								}
-							}
-						}
-						return nil
-					})
-				}
+		grp.Go(func() error {
+			defer emit(Finished)
 
-				subGroup.Wait()
+			var dependenciesFinishedButNotMet uint32
+			wg := sync.WaitGroup{}
+			for from, ch := range dependencyChans[resource] {
+				from := from
+				ch := ch
+
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					met, unemitted := rg.waitForSignals(ctx, ch, rg.inverseDependencies[resource][from])
+					if met {
+						return
+					}
+					if len(unemitted) != 0 {
+						strUnemitted := []string{}
+						for _, s := range unemitted {
+							strUnemitted = append(strUnemitted, s.String())
+						}
+						resource.Logger().Infof(
+							"skipping due to %s finishing without emitting %s",
+							from.Name(),
+							strings.Join(strUnemitted, ", "))
+					}
+					atomic.AddUint32(&dependenciesFinishedButNotMet, 1)
+				}()
+			}
+			wg.Wait()
+			if ctx.Err() != nil {
+				return ctx.Err()
 			}
 
-			outputSigChan := make(chan Signal, 1)
-			go func() {
-				for {
-					select {
-					case <-ctx.Done():
-						return
-					case sig := <-outputSigChan:
-						for from := range rg.dependencies[resource] {
-							dependencyChans[from][resource] <- sig
-							if sig == SignalFinished {
-								return
-							}
-						}
-					}
-				}
-			}()
+			if dependenciesFinishedButNotMet != 0 {
+				defer emit(Unevaluated)
+				return nil
+			}
+			defer emit(Evaluated)
 
+			var shouldSkip bool
 			started := time.Now()
 			resource.Logger().Infof("evaluating resource")
-			shouldSkip := shouldSkipCount != 0
 			if skippable, ok := resource.(SkippableResource); ok {
 				var err error
 				shouldSkip, err = skippable.ShouldSkip(ctx)
@@ -185,13 +198,14 @@ func (rg *ResourceGraph) Materialize(ctx context.Context, sigChan chan<- Signal)
 			}
 			if !shouldSkip {
 				resource.Logger().Infof("materializing resource")
-				err := resource.Materialize(ctx, outputSigChan)
+				err := resource.Materialize(ctx)
 				if err != nil {
 					return errors.Wrapf(err, "could not materialize resource %v", resource.Name())
 				}
+				defer emit(Materialized)
 			} else {
-				sigChan <- "notskipped"
 				resource.Logger().Infof("skipping resource materialization")
+				defer emit(Skipped)
 			}
 			resource.Logger().Infof("resource evaluated in %v", time.Now().Sub(started))
 			return nil
@@ -253,7 +267,7 @@ func (rg *ResourceGraph) String() string {
 // dependencies:
 func (rg *ResourceGraph) When(resource Resource, signals ...Signal) *DependencySetter {
 	if len(signals) == 0 {
-		signals = []Signal{SignalFinished}
+		signals = []Signal{Evaluated}
 	}
 	deps := []dependency{}
 	for _, sig := range signals {
@@ -283,8 +297,11 @@ type dependency struct {
 
 // And adds an additional resource that must be completed before the Resource passed to Do will be run
 func (ds *DependencySetter) And(source Resource, signals ...Signal) *DependencySetter {
-	for _, sig := range signals {
-		ds.dependencies = append(ds.dependencies, dependency{source, sig})
+	if len(signals) == 0 {
+		signals = []Signal{Evaluated}
+	}
+	for _, signal := range signals {
+		ds.dependencies = append(ds.dependencies, dependency{source, signal})
 	}
 	return ds
 }

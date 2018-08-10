@@ -8,7 +8,7 @@ import (
 
 // Resource is a resource that can be materialized by rfsb
 type Resource interface {
-	Materialize(context.Context, chan<- Signal) error
+	Materialize(context.Context) error
 
 	// Best to implement these by embedding ResourceMeta
 	Name() string
