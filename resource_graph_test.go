@@ -27,29 +27,6 @@ func TestResourceGraphFlattening(t *testing.T) {
 	assert.ElementsMatch(t, outerRG.resources, innerRG.resources)
 }
 
-// TestResourceGraphFlattening tests that when we flatten a ResourceGraph into another ResourceGraph, all of the
-// dependencies between resources are preserved
-func TestResourceGraphFlatteningDependencies(t *testing.T) {
-	t.Parallel()
-
-	innerRG := &ResourceGraph{}
-	r1 := mkArbitraryResource(t)
-	r2 := mkArbitraryResource(t)
-	innerRG.Register("r1", r1)
-	innerRG.When(r1).Do("r2", r2)
-
-	outerRG := &ResourceGraph{}
-	outerRG.Register("inner", innerRG)
-
-	assert.ElementsMatch(t, outerRG.resources, innerRG.resources)
-	deps, ok := outerRG.dependencies[r1]
-	assert.Equal(t, ok, true)
-	assert.ElementsMatch(t, deps, []Resource{r2})
-	inverseDeps, ok := outerRG.inverseDependencies[r2]
-	assert.Equal(t, ok, true)
-	assert.ElementsMatch(t, inverseDeps, []Resource{r1})
-}
-
 func mkArbitraryResource(t *testing.T) Resource {
 	scratchDir, err := ioutil.TempDir("", t.Name())
 	if err != nil {

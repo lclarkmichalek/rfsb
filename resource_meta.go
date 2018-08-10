@@ -8,7 +8,7 @@ import (
 
 // Resource is a resource that can be materialized by rfsb
 type Resource interface {
-	Materialize(context.Context) error
+	Materialize(context.Context, chan<- Signal) error
 
 	// Best to implement these by embedding ResourceMeta
 	Name() string
@@ -22,10 +22,12 @@ type ResourceMeta struct {
 	logger *logrus.Entry
 }
 
+// Name returns the name of the Resource
 func (rm *ResourceMeta) Name() string {
 	return rm.name
 }
 
+// Logger returns the Resource's logger
 func (rm *ResourceMeta) Logger() *logrus.Entry {
 	return rm.logger
 }
@@ -34,27 +36,4 @@ func (rm *ResourceMeta) Logger() *logrus.Entry {
 func (rm *ResourceMeta) SetName(name string) {
 	rm.name = name
 	rm.logger = logrus.New().WithField("resource", name)
-}
-
-type registry interface {
-	Register(string, Resource)
-	RegisterDependency(from, to Resource)
-}
-
-type DependencySetter struct {
-	registry registry
-	sources  []Resource
-}
-
-func (ds *DependencySetter) And(source Resource) *DependencySetter {
-	ds.sources = append(ds.sources, source)
-	return ds
-}
-
-func (ds *DependencySetter) Do(name string, target Resource) *DependencySetter {
-	ds.registry.Register(name, target)
-	for _, source := range ds.sources {
-		ds.registry.RegisterDependency(source, target)
-	}
-	return ds
 }

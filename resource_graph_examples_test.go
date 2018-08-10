@@ -21,7 +21,7 @@ func ExampleResourceGraph() {
 		UID:      uint32(os.Getuid()),
 		GID:      uint32(os.Getgid()),
 	}
-	rg.When(firstFile).Do("firstFile", secondFile)
+	rg.When(firstFile, SignalFinished).Do("firstFile", secondFile)
 }
 
 func ExampleResourceGraph_When() {
@@ -46,5 +46,5 @@ func ExampleResourceGraph_When() {
 		GID:  group.GID,
 		User: user.User,
 	}
-	rg.When(user).And(group).Do("membership", membership)
+	rg.When(user, SignalFinished).And(group, SignalFinished).Do("membership", membership)
 }

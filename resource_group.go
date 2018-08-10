@@ -43,7 +43,7 @@ func (gr *GroupResource) ShouldSkip(context.Context) (bool, error) {
 }
 
 // Materialize creates the group
-func (gr *GroupResource) Materialize(context.Context) error {
+func (gr *GroupResource) Materialize(context.Context, chan<- Signal) error {
 	groupContents, err := ioutil.ReadFile("/etc/group")
 	if err != nil {
 		return errors.Wrap(err, "could not read /etc/group")
@@ -110,7 +110,7 @@ func (gmr *GroupMembershipResource) ShouldSkip(context.Context) (bool, error) {
 }
 
 // Materialize adds the user to the group
-func (gmr *GroupMembershipResource) Materialize(context.Context) error {
+func (gmr *GroupMembershipResource) Materialize(context.Context, chan<- Signal) error {
 	groupContents, err := ioutil.ReadFile("/etc/group")
 	if err != nil {
 		return errors.Wrap(err, "could not read /etc/group")

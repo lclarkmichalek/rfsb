@@ -53,7 +53,7 @@ func (fr *FileResource) ShouldSkip(context.Context) (bool, error) {
 }
 
 // Materialize writes the file out and sets the owners correctly
-func (fr *FileResource) Materialize(context.Context) error {
+func (fr *FileResource) Materialize(ctx context.Context, sigCh chan<- Signal) error {
 	err := ioutil.WriteFile(fr.Path, []byte(fr.Contents), fr.Mode)
 	if err != nil {
 		return errors.Wrapf(err, "could not write to %v", fr.Path)

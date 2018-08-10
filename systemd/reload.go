@@ -34,7 +34,7 @@ func ReloadIfModified(unitPath string, beforeModification time.Time) rfsb.Resour
 type DaemonReload struct{ rfsb.ResourceMeta }
 
 // Materialize connects to the system dbus connection and triggers a reload
-func (*DaemonReload) Materialize(context.Context) error {
+func (*DaemonReload) Materialize(context.Context, chan<- rfsb.Signal) error {
 	conn, err := dbus.New()
 	if err != nil {
 		return errors.Wrap(err, "could not create dbus connection")
@@ -48,16 +48,16 @@ func (*DaemonReload) Materialize(context.Context) error {
 type StartUnit struct {
 	rfsb.ResourceMeta
 
-	Name string
+	UnitName string
 }
 
-func (su *StartUnit) Materialize(ctx context.Context) error {
+func (su *StartUnit) Materialize(ctx context.Context, sigCh chan<- rfsb.Signal) error {
 	conn, err := dbus.New()
 	if err != nil {
 		return errors.Wrap(err, "could not create dbus connection")
 	}
 	defer conn.Close()
 
-	_, err = conn.StartUnit(su.Name, "replace", nil)
+	_, err = conn.StartUnit(su.UnitName, "replace", nil)
 	return errors.Wrap(err, "could not start unit")
 }

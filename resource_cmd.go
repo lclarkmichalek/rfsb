@@ -23,7 +23,7 @@ type CmdResource struct {
 }
 
 // Materialize runs the specified command
-func (cr *CmdResource) Materialize(ctx context.Context) error {
+func (cr *CmdResource) Materialize(ctx context.Context, sigCh chan<- Signal) error {
 	cmd := exec.CommandContext(ctx, cr.Command, cr.Arguments...)
 	cr.Logger().Infof("running %s %s", cr.Command, strings.Join(cr.Arguments, " "))
 	for k, v := range cr.Environment {

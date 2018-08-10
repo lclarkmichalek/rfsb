@@ -53,7 +53,7 @@ func (ur *UserResource) ShouldSkip(context.Context) (bool, error) {
 }
 
 // Materialize creates the user
-func (ur *UserResource) Materialize(context.Context) error {
+func (ur *UserResource) Materialize(context.Context, chan<- Signal) error {
 	passwdContents, err := ioutil.ReadFile("/etc/passwd")
 	if err != nil {
 		return errors.Wrap(err, "could not read /etc/passwd")

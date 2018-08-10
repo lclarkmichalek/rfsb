@@ -17,13 +17,26 @@ func Register(name string, r Resource) {
 // When creates a DependencySetter using the DefaultRegistry
 //
 // When is a shortcut for DefaultRegistry.When. See there for more details
-func When(source Resource) *DependencySetter {
-	return DefaultRegistry.When(source)
+func When(source Resource, signals ...Signal) *DependencySetter {
+	return DefaultRegistry.When(source, signals...)
 }
 
 // Materialize materializes the resources registered with the DefaultRegistry
 //
 // Materialize is a shortcut for DefaultRegistry.Materialize. See there for more details
 func Materialize(ctx context.Context) error {
-	return DefaultRegistry.Materialize(ctx)
+	ch := make(chan Signal, 1024)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case sig := <-ch:
+				if sig == SignalFinished {
+					return
+				}
+			}
+		}
+	}()
+	return DefaultRegistry.Materialize(ctx, ch)
 }
